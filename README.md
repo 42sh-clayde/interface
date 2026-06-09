@@ -112,5 +112,12 @@ lsof -nP -iTCP:3100 -sTCP:LISTEN
 git -C "$REPO_PATH" status   # doit fonctionner
 ```
 
+**Windows — `invalid option \Program Files\Git\workspace`**
+Git Bash réécrit `/workspace/repo` avant d'appeler Podman. Utilisez le chemin **local** du clone dans `config.env`, pas le chemin conteneur :
+```bash
+REPO_PATH="/c/Users/Vous/mon-clone-azdo"
+```
+Puis relancez `./init.sh` ou `./scripts/run.sh`. Les scripts activent `MSYS_NO_PATHCONV` automatiquement sous Git Bash.
+
 **Pas de remote AzDO**
 Le clone doit avoir `origin` vers `dev.azure.com`. Le PAT est testé à la connexion dans l'UI.

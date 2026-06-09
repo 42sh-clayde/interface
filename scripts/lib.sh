@@ -21,6 +21,23 @@ volume_suffix() {
   fi
 }
 
+# Git Bash / MSYS convertit /workspace/repo → C:\Program Files\Git\workspace\...
+# avant d'appeler podman.exe, ce qui casse -v host:/workspace/repo
+is_git_bash() {
+  case "$(uname -s)" in
+    MINGW* | MSYS* | CYGWIN*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+exec_container_cmd() {
+  if is_git_bash; then
+    MSYS_NO_PATHCONV=1 "$@"
+  else
+    "$@"
+  fi
+}
+
 # Normalise un chemin Windows (C:\...) vers Git Bash / Podman (/c/...)
 normalize_repo_path() {
   local p="$1"
@@ -120,6 +137,11 @@ validate_repo_path() {
     echo '  REPO_PATH="/c/Users/Vous/Mes Projets/mon-repo"' >&2
     return 1
   fi
+  if is_git_bash && [[ "$path" == "/workspace/repo" ]]; then
+    echo "Erreur: REPO_PATH='/workspace/repo' est le chemin dans le conteneur, pas sur votre PC." >&2
+    echo '  Ex. Windows : REPO_PATH="/c/Users/Vous/mon-clone-azdo"' >&2
+    return 1
+  fi
   if [[ ! -d "$path" ]]; then
     echo "Erreur: REPO_PATH n'existe pas: $path" >&2
     echo "  Sous Git Bash / WSL, préférez: /c/Users/... plutôt que C:\\Users\\..." >&2
@@ -159,7 +181,7 @@ build_image() {
   local root="$2"
   local image="${IMAGE_NAME:-localhost/interface-redirects:latest}"
   echo "→ Construction de l'image $image ..."
-  "$cmd" build -t "$image" -f "$root/Containerfile" "$root"
+  exec_container_cmd "$cmd" build -t "$image" -f "$root/Containerfile" "$root"
 }
 
 run_container() {
@@ -189,7 +211,7 @@ run_container() {
   echo "  Ctrl+C pour arrêter"
   echo ""
 
-  "$cmd" run --rm -p "${port}:${port}" \
+  exec_container_cmd "$cmd" run --rm -p "${port}:${port}" \
     -e PORT="$port" \
     -e AZDO_ORG="${AZDO_ORG:?AZDO_ORG requis}" \
     -e AZDO_PROJECT="${AZDO_PROJECT:?AZDO_PROJECT requis}" \

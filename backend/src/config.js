@@ -1,10 +1,12 @@
+import { resolveRepoMountPath } from "./paths.js";
+
 export const settings = {
   azdoOrg: process.env.AZDO_ORG || "mon-org",
   azdoProject: process.env.AZDO_PROJECT || "mon-projet",
   azdoRepo: process.env.AZDO_REPO || "mon-repo",
   defaultBranch: process.env.DEFAULT_BRANCH || "main",
   targetFolder: process.env.TARGET_FOLDER || "config/apache/redirects",
-  repoMountPath: process.env.REPO_MOUNT_PATH || "/workspace/repo",
+  repoMountPath: resolveRepoMountPath(),
   remoteName: process.env.REMOTE_NAME || "origin",
   host: process.env.HOST || "0.0.0.0",
   port: Number(process.env.PORT || 3100),
