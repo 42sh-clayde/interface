@@ -23,7 +23,7 @@ Au **premier lancement** :
 
 | Prérequis | Détail |
 |-----------|--------|
-| **Podman** (ou Docker) | Aucun Python/Node requis sur l'hôte |
+| **Node.js** | Aucun Python requis sur l'hôte pour `./scripts/dev.sh` |
 | **Clone local AzDO** | Repo déjà cloné, remote `origin` configuré |
 | **PAT** | Saisi dans l'UI — scope **Code (Read & Write)** — jamais dans git |
 
@@ -66,7 +66,7 @@ cp config.env.example config.env
 | `./scripts/start.sh` | Redémarrer sans rebuild |
 | `./scripts/build.sh` | Reconstruire l'image seule |
 | `./scripts/run.sh` | Build + run (config.env requis) |
-| `./scripts/dev.sh` | Dev hors conteneur (Python + Node locaux) |
+| `./scripts/dev.sh` | Dev hors conteneur (Node.js local) |
 
 Variables utiles :
 
@@ -93,7 +93,9 @@ PORT=3101 ./scripts/start.sh    # Autre port si 3100 occupé
 
 ## Architecture
 
-- **Conteneur** : Python 3.12, FastAPI, Git, frontend React buildé
+- **Backend** : Node.js 22, Express (léger)
+- **Frontend** : React, Vite, React Router
+- **Conteneur** : Node Alpine + Git, frontend buildé en statique
 - **Volume** : clone local monté en `/workspace/repo`
 - **3 routes UI** : `/`, `/extraction`, `/deployment`
 
