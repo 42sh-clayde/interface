@@ -36,7 +36,7 @@ Au **premier lancement** :
 | `AZDO_REPO` | Dépôt |
 | `DEFAULT_BRANCH` | Branche de base (`main`, …) |
 | `TARGET_FOLDER` | Dossier redirections Apache dans le repo |
-| `REPO_PATH` | Chemin **absolu** vers le clone local (par machine) |
+| `REPO_PATH` | Chemin **absolu** vers le clone local (par machine) — **entre guillemets** si espaces |
 | `PORT` | Port HTTP (défaut `3100`) |
 | `IMAGE_NAME` | Nom image Podman |
 
@@ -46,9 +46,17 @@ Exemple :
 
 ```bash
 cp config.env.example config.env
-# Éditer AZDO_* et REPO_PATH
+# Éditer AZDO_* et REPO_PATH (guillemets si espaces dans le chemin)
+# Linux/macOS :  REPO_PATH="/home/user/Mes Projets/mon-repo"
+# Windows :      REPO_PATH="/c/Users/Vous/Mes Projets/mon-repo"
 ./init.sh
 ```
+
+### Chemins Windows
+
+- Utilisez **Git Bash** ou **WSL** pour lancer `./init.sh`
+- Mettez `REPO_PATH` **entre guillemets doubles**
+- Préférez le format `/c/Users/...` plutôt que `C:\Users\...` (évite les erreurs de parsing ligne 17)
 
 ### Scripts utilitaires
 

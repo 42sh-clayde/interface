@@ -16,6 +16,7 @@ CONTAINER_CMD="$(detect_container_cmd)" || {
   echo "Erreur: Podman (ou Docker) est requis." >&2
   echo "  macOS : https://podman.io/getting-started/installation" >&2
   echo "  Linux : sudo apt install podman  (ou équivalent)" >&2
+  echo "  Windows : Podman Desktop + Git Bash" >&2
   exit 1
 }
 echo "✓ $CONTAINER_CMD détecté"
@@ -36,19 +37,18 @@ load_config "$ROOT"
 if [[ -z "${REPO_PATH:-}" ]]; then
   echo ""
   echo "REPO_PATH n'est pas défini — chemin vers votre clone local AzDO."
+  echo "  (Guillemets optionnels ; espaces et chemins Windows acceptés)"
   read -r -p "Chemin absolu du clone : " REPO_PATH
+  REPO_PATH="${REPO_PATH#\"}"
+  REPO_PATH="${REPO_PATH%\"}"
   REPO_PATH="${REPO_PATH/#\~/$HOME}"
+  REPO_PATH="$(normalize_repo_path "$REPO_PATH)"
   if [[ ! -d "$REPO_PATH" ]]; then
     echo "Erreur: chemin introuvable: $REPO_PATH" >&2
     exit 1
   fi
-  # Persiste dans config.env
-  if grep -q '^REPO_PATH=' "$CONFIG"; then
-    sed -i.bak "s|^REPO_PATH=.*|REPO_PATH=$REPO_PATH|" "$CONFIG" && rm -f "$CONFIG.bak"
-  else
-    echo "REPO_PATH=$REPO_PATH" >> "$CONFIG"
-  fi
-  echo "✓ REPO_PATH enregistré dans config.env"
+  set_config_var "$CONFIG" "REPO_PATH" "$REPO_PATH"
+  echo "✓ REPO_PATH enregistré dans config.env (entre guillemets)"
   load_config "$ROOT"
 fi
 
