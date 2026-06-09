@@ -31,9 +31,9 @@ if [[ ! -f "$CONFIG" ]]; then
   echo "✓ config.env créé depuis config.env.example"
 fi
 
-load_config "$ROOT"
+load_config "$ROOT" || exit 1
 
-# REPO_PATH interactif si vide
+# REPO_PATH interactif si vide ou absent
 if [[ -z "${REPO_PATH:-}" ]]; then
   echo ""
   echo "REPO_PATH n'est pas défini — chemin vers votre clone local AzDO."
@@ -42,14 +42,20 @@ if [[ -z "${REPO_PATH:-}" ]]; then
   REPO_PATH="${REPO_PATH#\"}"
   REPO_PATH="${REPO_PATH%\"}"
   REPO_PATH="${REPO_PATH/#\~/$HOME}"
-  REPO_PATH="$(normalize_repo_path "$REPO_PATH)"
+  REPO_PATH="${REPO_PATH#"${REPO_PATH%%[![:space:]]*}"}"
+  REPO_PATH="${REPO_PATH%"${REPO_PATH##*[![:space:]]}"}"
+  if [[ -z "$REPO_PATH" ]]; then
+    echo "Erreur: chemin vide." >&2
+    exit 1
+  fi
+  REPO_PATH="$(normalize_repo_path "$REPO_PATH")"
   if [[ ! -d "$REPO_PATH" ]]; then
     echo "Erreur: chemin introuvable: $REPO_PATH" >&2
     exit 1
   fi
   set_config_var "$CONFIG" "REPO_PATH" "$REPO_PATH"
+  export REPO_PATH
   echo "✓ REPO_PATH enregistré dans config.env (entre guillemets)"
-  load_config "$ROOT"
 fi
 
 validate_repo_path "$REPO_PATH" || exit 1

@@ -72,9 +72,16 @@ load_config() {
   done < "$config_file"
 
   if [[ -n "${REPO_PATH:-}" ]]; then
-    REPO_PATH="$(normalize_repo_path "$REPO_PATH")"
-    export REPO_PATH
+    REPO_PATH="${REPO_PATH#"${REPO_PATH%%[![:space:]]*}"}"
+    REPO_PATH="${REPO_PATH%"${REPO_PATH##*[![:space:]]}"}"
+    if [[ -z "$REPO_PATH" ]]; then
+      unset REPO_PATH
+    else
+      REPO_PATH="$(normalize_repo_path "$REPO_PATH")"
+      export REPO_PATH
+    fi
   fi
+  return 0
 }
 
 # Écrit une clé dans config.env (valeur toujours entre guillemets doubles)
@@ -88,7 +95,8 @@ set_config_var() {
   while IFS= read -r line || [[ -n "$line" ]]; do
     line="${line%$'\r'}"
     if [[ "$line" =~ ^${key}= ]]; then
-      printf '%s="%s"\n' "$key" "$escaped"
+      printf '%s=' "$key"
+      printf '"%s"\n' "$escaped"
       found=1
     else
       printf '%s\n' "$line"
@@ -96,10 +104,12 @@ set_config_var() {
   done < "$file" > "$tmp"
 
   if [[ "$found" -eq 0 ]]; then
-    printf '%s="%s"\n' "$key" "$escaped" >> "$tmp"
+    printf '%s=' "$key"
+    printf '"%s"\n' "$escaped" >> "$tmp"
   fi
 
-  mv "$tmp" "$file"
+  cp "$tmp" "$file"
+  rm -f "$tmp"
 }
 
 validate_repo_path() {
