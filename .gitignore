@@ -1,0 +1,12 @@
+node_modules/
+backend/static/
+backend/__pycache__/
+backend/app/__pycache__/
+*.pyc
+.env
+config.env
+*.env.bak
+backend/.pytest_cache/
+frontend/tsconfig.tsbuildinfo
+.DS_Store
+frontend/dist/
