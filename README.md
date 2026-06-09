@@ -117,7 +117,14 @@ Git Bash réécrit `/workspace/repo` avant d'appeler Podman. Utilisez le chemin 
 ```bash
 REPO_PATH="/c/Users/Vous/mon-clone-azdo"
 ```
-Puis relancez `./init.sh` ou `./scripts/run.sh`. Les scripts activent `MSYS_NO_PATHCONV` automatiquement sous Git Bash.
+Puis relancez `./init.sh` ou `./scripts/run.sh`. Les scripts convertissent les chemins en format Windows pour Podman.
+
+**Windows — `context must be a directory : C:\c\users\...`**
+Chemin doublement converti. Mettez `REPO_PATH` en style Git Bash (`/c/Users/...`), pas `C:\c\users\...` :
+```bash
+REPO_PATH="/c/Users/toto/OneDrive - aoa/Documents/mon-clone-azdo"
+```
+Les guillemets sont obligatoires si le chemin contient des espaces (OneDrive, « Mes Projets », etc.).
 
 **Pas de remote AzDO**
 Le clone doit avoir `origin` vers `dev.azure.com`. Le PAT est testé à la connexion dans l'UI.

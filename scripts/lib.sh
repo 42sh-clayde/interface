@@ -38,10 +38,49 @@ exec_container_cmd() {
   fi
 }
 
+# Corrige C:/c/users/... ou C:\c\users\... (double lettre de lecteur)
+fix_double_drive() {
+  local p="$1"
+  p="${p//\\//}"
+  if [[ "$p" =~ ^([A-Za-z]):/([a-zA-Z])/(.*)$ ]]; then
+    if [[ "$(echo "${BASH_REMATCH[1]}" | tr '[:upper:]' '[:lower:]')" == \
+          "$(echo "${BASH_REMATCH[2]}" | tr '[:upper:]' '[:lower:]')" ]]; then
+      p="/${BASH_REMATCH[2]}/${BASH_REMATCH[3]}"
+    fi
+  fi
+  printf '%s' "$p"
+}
+
+# Chemin Windows natif pour podman.exe / docker.exe (Git Bash)
+to_win_path() {
+  local p="$1"
+  if ! is_git_bash; then
+    printf '%s' "$p"
+    return
+  fi
+  p="$(fix_double_drive "$p")"
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -w "$p"
+    return
+  fi
+  p="${p//\\//}"
+  if [[ "$p" =~ ^/([A-Za-z])/(.*)$ ]]; then
+    local drive
+    drive="$(echo "${BASH_REMATCH[1]}" | tr '[:lower:]' '[:upper:]')"
+    p="${drive}:\\${BASH_REMATCH[2]//\//\\}"
+  elif [[ "$p" =~ ^([A-Za-z]):/(.*)$ ]]; then
+    local drive
+    drive="$(echo "${BASH_REMATCH[1]}" | tr '[:lower:]' '[:upper:]')"
+    p="${drive}:\\${BASH_REMATCH[2]//\//\\}"
+  fi
+  printf '%s' "$p"
+}
+
 # Normalise un chemin Windows (C:\...) vers Git Bash / Podman (/c/...)
 normalize_repo_path() {
   local p="$1"
   p="${p//\\//}"
+  p="$(fix_double_drive "$p")"
   if [[ "$p" =~ ^/([A-Za-z])/(.*)$ ]] || [[ "$p" =~ ^/([A-Za-z]):/(.*)$ ]]; then
     local drive
     drive="$(echo "${BASH_REMATCH[1]}" | tr '[:upper:]' '[:lower:]')"
@@ -180,8 +219,14 @@ build_image() {
   local cmd="$1"
   local root="$2"
   local image="${IMAGE_NAME:-localhost/interface-redirects:latest}"
+  local context="$root"
+  local dockerfile="$root/Containerfile"
+  if is_git_bash; then
+    context="$(to_win_path "$root")"
+    dockerfile="$(to_win_path "$root/Containerfile")"
+  fi
   echo "→ Construction de l'image $image ..."
-  exec_container_cmd "$cmd" build -t "$image" -f "$root/Containerfile" "$root"
+  exec_container_cmd "$cmd" build -t "$image" -f "$dockerfile" "$context"
 }
 
 run_container() {
@@ -205,6 +250,10 @@ run_container() {
   fi
 
   repo_mount="$REPO_PATH"
+  local vol_host="$repo_mount"
+  if is_git_bash; then
+    vol_host="$(to_win_path "$repo_mount")"
+  fi
 
   echo "→ Démarrage sur http://localhost:$port"
   echo "  Repo monté : $repo_mount → /workspace/repo"
@@ -219,6 +268,6 @@ run_container() {
     -e DEFAULT_BRANCH="${DEFAULT_BRANCH:-main}" \
     -e TARGET_FOLDER="${TARGET_FOLDER:-config/apache/redirects}" \
     -e REPO_MOUNT_PATH=/workspace/repo \
-    -v "${repo_mount}:/workspace/repo${vol_suffix}" \
+    -v "${vol_host}:/workspace/repo${vol_suffix}" \
     "$image"
 }

@@ -1,5 +1,14 @@
 import { resolve } from "path";
 
+/** Corrige C:/c/users/... (double lettre de lecteur après conversion MSYS). */
+function fixDoubleDrive(p) {
+  const m = p.match(/^([A-Za-z]):\/?([a-zA-Z])\/?(.*)$/);
+  if (m && m[1].toLowerCase() === m[2].toLowerCase()) {
+    return `/${m[2]}/${m[3]}`;
+  }
+  return p;
+}
+
 /** Normalise REPO_PATH / REPO_MOUNT_PATH (Git Bash /c/... → chemin utilisable par Node). */
 export function normalizeRepoPath(raw) {
   if (!raw) return raw;
@@ -7,6 +16,7 @@ export function normalizeRepoPath(raw) {
   if (!p) return p;
 
   p = p.replace(/\\/g, "/");
+  p = fixDoubleDrive(p);
 
   // Git Bash : /c/Users/foo → C:/Users/foo (Node + git.exe sur Windows)
   const bashDrive = p.match(/^\/([a-zA-Z])\/(.*)$/);
@@ -29,7 +39,8 @@ export function resolveRepoMountPath() {
 
   if (
     process.platform === "win32" &&
-    (raw === "/workspace/repo" || normalized.replace(/\\/g, "/").toLowerCase().includes("/program files/git/"))
+    (raw === "/workspace/repo" ||
+      normalized.replace(/\\/g, "/").toLowerCase().includes("/program files/git/"))
   ) {
     throw new Error(
       "REPO_PATH invalide sur Windows : indiquez le chemin local du clone (ex. C:/Users/Vous/mon-repo), pas /workspace/repo",
